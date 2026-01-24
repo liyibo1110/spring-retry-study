@@ -1,5 +1,6 @@
 package com.github.liyibo1110.spring.retry;
 
+import org.springframework.core.AttributeAccessor;
 import org.springframework.lang.Nullable;
 
 /**
@@ -8,7 +9,7 @@ import org.springframework.lang.Nullable;
  * @author liyibo
  * @date 2026-01-23 00:35
  */
-public interface RetryContext {
+public interface RetryContext extends AttributeAccessor {
 
     /**
      * 重试上下文属性名，用作report key，可用于report
