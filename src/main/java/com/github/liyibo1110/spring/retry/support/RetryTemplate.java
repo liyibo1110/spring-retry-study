@@ -6,6 +6,8 @@ import com.github.liyibo1110.spring.retry.RetryCallback;
 import com.github.liyibo1110.spring.retry.RetryListener;
 import com.github.liyibo1110.spring.retry.RetryOperations;
 import com.github.liyibo1110.spring.retry.RetryState;
+import com.github.liyibo1110.spring.retry.backoff.BackOffPolicy;
+import com.github.liyibo1110.spring.retry.backoff.NoBackOffPolicy;
 import com.github.liyibo1110.spring.retry.policy.MapRetryContextCache;
 import com.github.liyibo1110.spring.retry.policy.RetryContextCache;
 import org.apache.commons.logging.Log;
@@ -27,6 +29,8 @@ public class RetryTemplate implements RetryOperations {
     private static final String GLOBAL_STATE = "state.global";
 
     protected final Log logger = LogFactory.getLog(getClass());
+
+    private volatile BackOffPolicy backOffPolicy = new NoBackOffPolicy();
 
     private volatile RetryListener[] listeners = new RetryListener[0];
 
