@@ -39,6 +39,15 @@ public class BinaryExceptionClassifier extends SubclassClassifier<Throwable, Boo
     /**
      * 完全自定义映射关系
      */
+    public BinaryExceptionClassifier(Map<Class<? extends Throwable>, Boolean> typeMap,
+                                     boolean defaultValue, boolean traverseCauses) {
+        super(typeMap, defaultValue);
+        this.traverseCauses = traverseCauses;
+    }
+
+    /**
+     * 完全自定义映射关系
+     */
     public BinaryExceptionClassifier(Map<Class<? extends Throwable>, Boolean> typeMap) {
         this(typeMap, false);
     }

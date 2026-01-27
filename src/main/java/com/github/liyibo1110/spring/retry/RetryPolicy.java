@@ -13,10 +13,13 @@ public interface RetryPolicy extends Serializable {
     /** 当策略未规定失败前的最大尝试次数时，getMaxAttempts()要返回的值 */
     int NO_MAXIMUM_ATTEMPTS_SET = -1;
 
+    /**
+     * 本次是否可以进行retry
+     */
     boolean canRetry(RetryContext context);
 
     /**
-     * 获取retry需要的资源，传入callback，以便可以使用标记几口额u，并
+     * 获取retry需要的资源，传入callback，以便可以使用标记接口，并
      * 且管理器可以与callback协作，在状态令牌中设置某些状态
      */
     RetryContext open(RetryContext parent);
