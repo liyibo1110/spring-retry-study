@@ -12,7 +12,9 @@ import com.github.liyibo1110.spring.retry.backoff.NoBackOffPolicy;
 import com.github.liyibo1110.spring.retry.backoff.UniformRandomBackOffPolicy;
 import com.github.liyibo1110.spring.retry.policy.AlwaysRetryPolicy;
 import com.github.liyibo1110.spring.retry.policy.BinaryExceptionClassifierRetryPolicy;
+import com.github.liyibo1110.spring.retry.policy.CompositeRetryPolicy;
 import com.github.liyibo1110.spring.retry.policy.MaxAttemptsRetryPolicy;
+import com.github.liyibo1110.spring.retry.policy.PredicateRetryPolicy;
 import com.github.liyibo1110.spring.retry.policy.TimeoutRetryPolicy;
 import org.springframework.util.Assert;
 
@@ -234,8 +236,21 @@ public class RetryTemplateBuilder {
                     ? BinaryExceptionClassifier.defaultClassifier() : this.classifierBuilder.build();
             exceptionRetryPolicy = new BinaryExceptionClassifierRetryPolicy(exceptionClassifier);
         }else {
-            
+            exceptionRetryPolicy = new PredicateRetryPolicy(this.retryOnPredicate);
         }
+
+        CompositeRetryPolicy finalPolicy = new CompositeRetryPolicy();
+        finalPolicy.setPolicies(new RetryPolicy[] { this.baseRetryPolicy, exceptionRetryPolicy });
+        template.setRetryPolicy(finalPolicy);
+
+        // backoff policy
+        if(this.backOffPolicy == null)
+            this.backOffPolicy = new NoBackOffPolicy();
+        template.setBackOffPolicy(this.backOffPolicy);
+
+        // listeners
+        if(this.listeners != null)
+            template.setListeners(this.listeners.toArray(new RetryListener[0]));
 
         return template;
     }
