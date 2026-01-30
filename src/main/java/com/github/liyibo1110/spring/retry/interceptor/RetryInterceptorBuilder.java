@@ -1,5 +1,7 @@
 package com.github.liyibo1110.spring.retry.interceptor;
 
+import com.github.liyibo1110.spring.classify.BinaryExceptionClassifier;
+import com.github.liyibo1110.spring.classify.Classifier;
 import com.github.liyibo1110.spring.retry.RetryOperations;
 import com.github.liyibo1110.spring.retry.RetryPolicy;
 import com.github.liyibo1110.spring.retry.backoff.BackOffPolicy;
@@ -115,6 +117,142 @@ public abstract class RetryInterceptorBuilder<T extends MethodInterceptor> {
     public abstract T build();
 
     private RetryInterceptorBuilder() {}
+
+    public static class StatefulRetryInterceptorBuilder extends RetryInterceptorBuilder<StatefulRetryOperationsInterceptor> {
+        private final StatefulRetryOperationsInterceptor interceptor = new StatefulRetryOperationsInterceptor();
+        private MethodArgumentsKeyGenerator keyGenerator;
+        private NewMethodArgumentsIdentifier newMethodArgumentsIdentifier;
+        private Classifier<? super Throwable, Boolean> rollbackClassifier;
+
+        public StatefulRetryInterceptorBuilder keyGenerator(MethodArgumentsKeyGenerator keyGenerator) {
+            this.keyGenerator = keyGenerator;
+            return this;
+        }
+
+        public StatefulRetryInterceptorBuilder newMethodArgumentsIdentifier(NewMethodArgumentsIdentifier newMethodArgumentsIdentifier) {
+            this.newMethodArgumentsIdentifier = newMethodArgumentsIdentifier;
+            return this;
+        }
+
+        public StatefulRetryInterceptorBuilder rollbackFor(Classifier<? super Throwable, Boolean> rollbackClassifier) {
+            this.rollbackClassifier = rollbackClassifier;
+            return this;
+        }
+
+        @Override
+        public StatefulRetryInterceptorBuilder retryOperations(RetryOperations retryOperations) {
+            super.retryOperations(retryOperations);
+            return this;
+        }
+
+        @Override
+        public StatefulRetryInterceptorBuilder maxAttempts(int maxAttempts) {
+            super.maxAttempts(maxAttempts);
+            return this;
+        }
+
+        @Override
+        public StatefulRetryInterceptorBuilder backOffOptions(long initialInterval, double multiplier, long maxInterval) {
+            super.backOffOptions(initialInterval, multiplier, maxInterval);
+            return this;
+        }
+
+        @Override
+        public StatefulRetryInterceptorBuilder retryPolicy(RetryPolicy policy) {
+            super.retryPolicy(policy);
+            return this;
+        }
+
+        @Override
+        public StatefulRetryInterceptorBuilder backOffPolicy(BackOffPolicy policy) {
+            super.backOffPolicy(policy);
+            return this;
+        }
+
+        @Override
+        public StatefulRetryInterceptorBuilder recoverer(MethodInvocationRecoverer<?> recoverer) {
+            super.recoverer(recoverer);
+            return this;
+        }
+
+        @Override
+        public StatefulRetryOperationsInterceptor build() {
+            if(this.recoverer != null)
+                this.interceptor.setRecoverer(this.recoverer);
+            if(this.retryOperations != null)
+                this.interceptor.setRetryOperations(this.retryOperations);
+            else
+                this.interceptor.setRetryOperations(this.retryTemplate);
+            if(this.keyGenerator != null)
+                this.interceptor.setKeyGenerator(this.keyGenerator);
+            if(this.rollbackClassifier != null)
+                this.interceptor.setRollbackClassifier(this.rollbackClassifier);
+            if(this.newMethodArgumentsIdentifier != null)
+                this.interceptor.setNewItemIdentifier(this.newMethodArgumentsIdentifier);
+            if(this.label != null)
+                this.interceptor.setLabel(this.label);
+            return this.interceptor;
+        }
+
+        private StatefulRetryInterceptorBuilder() {}
+    }
+
+    /**
+     * 特殊的StatefulRetryOperationsInterceptor（固定key + CircuitBreakerRetryPolicy + RetryContextCache + 特殊的open/close/canRetry语义）
+     * 关于熔断的功能实现在了CircuitBreakerRetryPolicy（特点是把RetryContext当作断路器状态机来用）里面。
+     * 所以行为实际变化很大。
+     */
+    public static class CircuitBreakerInterceptorBuilder extends RetryInterceptorBuilder<StatefulRetryOperationsInterceptor> {
+        private final StatefulRetryOperationsInterceptor interceptor = new StatefulRetryOperationsInterceptor();
+        private MethodArgumentsKeyGenerator keyGenerator;
+
+        @Override
+        public CircuitBreakerInterceptorBuilder retryOperations(RetryOperations retryOperations) {
+            super.retryOperations(retryOperations);
+            return this;
+        }
+
+        @Override
+        public CircuitBreakerInterceptorBuilder maxAttempts(int maxAttempts) {
+            super.maxAttempts(maxAttempts);
+            return this;
+        }
+
+        @Override
+        public CircuitBreakerInterceptorBuilder retryPolicy(RetryPolicy policy) {
+            super.retryPolicy(policy);
+            return this;
+        }
+
+        public CircuitBreakerInterceptorBuilder keyGenerator(MethodArgumentsKeyGenerator keyGenerator) {
+            this.keyGenerator = keyGenerator;
+            return this;
+        }
+
+        @Override
+        public CircuitBreakerInterceptorBuilder recoverer(MethodInvocationRecoverer<?> recoverer) {
+            super.recoverer(recoverer);
+            return this;
+        }
+
+        @Override
+        public StatefulRetryOperationsInterceptor build() {
+            if(this.recoverer != null)
+                this.interceptor.setRecoverer(this.recoverer);
+            if(this.retryOperations != null)
+                this.interceptor.setRetryOperations(this.retryOperations);
+            else
+                this.interceptor.setRetryOperations(this.retryTemplate);
+            if(this.keyGenerator != null)
+                this.interceptor.setKeyGenerator(this.keyGenerator);
+            if(this.label != null)
+                this.interceptor.setLabel(this.label);
+            this.interceptor.setRollbackClassifier(new BinaryExceptionClassifier(false));
+            return this.interceptor;
+        }
+
+        private CircuitBreakerInterceptorBuilder() {}
+    }
 
     public static class StatelessRetryInterceptorBuilder extends RetryInterceptorBuilder<RetryOperationsInterceptor> {
         private final RetryOperationsInterceptor interceptor = new RetryOperationsInterceptor();
